@@ -1,0 +1,6 @@
+{
+  "name": "BST LAB — Interactive Contact Manager & Visualizer",
+  "description": "B.Tech Semester 3 Data Structures mini-project: An interactive Binary Search Tree educational platform featuring real-time visual tree layout, contact management, search path highlighting, traversal analysis, and comprehensive viva documentation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
