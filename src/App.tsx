@@ -129,8 +129,10 @@ export default function App() {
         }
       );
     } catch (err: any) {
-      console.warn('Error syncing BST state:', err);
-      showToast('Operating in Preview Mode with fictional sample data.', 'info');
+      console.warn('Error syncing BST state from live backend:', err);
+      setIsConnected(false);
+      setPythonUrl(bstApi.getBaseUrl());
+      showToast(err.message || 'Failed to communicate with Python BST backend.', 'error');
     }
   }, [showToast]);
 
@@ -259,8 +261,8 @@ export default function App() {
       showToast('Sample educational contacts loaded successfully.', 'success');
       await refreshState();
     } catch (err: any) {
-      showToast('Loaded local preview dataset.', 'info');
-      await refreshState();
+      const msg = err.data?.message || err.message || 'Failed to load demo contacts from Python backend';
+      showToast(msg, 'error');
     } finally {
       setIsMutating(false);
     }

@@ -76,6 +76,13 @@ function getOrCreateSessionId(): string {
   return sid;
 }
 
+const DEFAULT_PYTHON_API_URL = 'https://bst-lab-python-api.onrender.com';
+
+export const API_BASE_URL: string = (
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PYTHON_BST_API_URL) ||
+  DEFAULT_PYTHON_API_URL
+).replace(/\/$/, '');
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const sessionId = getOrCreateSessionId();
   const headers = new Headers(options.headers || {});
@@ -84,7 +91,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(endpoint, {
+  // Prepend API_BASE_URL to prevent requests from hitting local or Netlify /api routes
+  const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
+    ? endpoint
+    : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });
@@ -103,16 +115,31 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const bstApi = {
+  getBaseUrl(): string {
+    return API_BASE_URL;
+  },
+
   async getHealth(): Promise<HealthResponse> {
     try {
-      return await request<HealthResponse>('/api/health');
+      const data = await request<any>('/api/health');
+      const isHealthy = data?.status === 'healthy' || data?.status === 'ok';
+      return {
+        status: data?.status || 'healthy',
+        connected: isHealthy,
+        python_url: API_BASE_URL,
+        mode: isHealthy ? 'live' : 'preview',
+        message: isHealthy
+          ? `Connected to live Python Flask BST backend at ${API_BASE_URL}`
+          : 'Backend returned non-healthy status.',
+        service_info: data,
+      };
     } catch (e: any) {
       return {
         status: 'error',
         connected: false,
-        python_url: null,
+        python_url: API_BASE_URL,
         mode: 'preview',
-        message: 'Could not reach backend health endpoint. Running in offline Preview Mode.',
+        message: `Could not reach Python BST backend at ${API_BASE_URL}: ${e.message}`,
       };
     }
   },
